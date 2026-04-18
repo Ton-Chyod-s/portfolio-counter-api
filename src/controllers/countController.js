@@ -1,9 +1,4 @@
-const { Redis } = require('@upstash/redis');
-
-const redis = new Redis({
-  url: process.env.UPSTASH_REDIS_REST_URL,
-  token: process.env.UPSTASH_REDIS_REST_TOKEN,
-});
+const { getCount } = require('../models/visitModel');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -14,7 +9,7 @@ module.exports = async function handler(req, res) {
   if (req.method !== 'GET') return res.status(405).json({ error: 'Method not allowed' });
 
   try {
-    const count = (await redis.get('portfolio:visits')) || 0;
+    const count = await getCount();
     return res.status(200).json({ count });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });

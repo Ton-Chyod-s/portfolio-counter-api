@@ -1,7 +1,11 @@
 {
   "functions": {
-    "api/*.js": {
+    "src/controllers/*.js": {
       "maxDuration": 10
     }
-  }
+  },
+  "rewrites": [
+    { "source": "/api/visit", "destination": "/src/controllers/visitController" },
+    { "source": "/api/count", "destination": "/src/controllers/countController" }
+  ]
 }
