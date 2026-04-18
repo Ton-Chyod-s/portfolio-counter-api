@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Portfolio Counter API – Docs</title>
+  <link rel="stylesheet" href="https://unpkg.com/swagger-ui-dist/swagger-ui.css" />
+  <style>
+    body { margin: 0; background: #fafafa; }
+    .swagger-ui .topbar { background: #1a1a2e; }
+    .swagger-ui .topbar .download-url-wrapper { display: none; }
+  </style>
+</head>
+<body>
+  <div id="swagger-ui"></div>
+  <script src="https://unpkg.com/swagger-ui-dist/swagger-ui-bundle.js"></script>
+  <script>
+    SwaggerUIBundle({
+      dom_id: '#swagger-ui',
+      layout: 'BaseLayout',
+      deepLinking: true,
+      spec: {
+        openapi: '3.0.0',
+        info: {
+          title: 'Portfolio Counter API',
+          version: '1.0.0',
+          description: 'API de contagem de visitas do portfólio de Klayton Dias.'
+        },
+        servers: [{ url: 'https://api.ton-chyod-s.me', description: 'Produção' }],
+        paths: {
+          '/api/visit': {
+            post: {
+              summary: 'Registrar visita',
+              description: 'Incrementa o contador de visitas. Limitado a 1 incremento por IP a cada 10 minutos. Requer que a requisição venha de um domínio autorizado.',
+              responses: {
+                '200': {
+                  description: 'Visita registrada com sucesso',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          count: { type: 'integer', example: 42 }
+                        }
+                      }
+                    }
+                  }
+                },
+                '403': {
+                  description: 'Origem não autorizada',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
+                    }
+                  }
+                },
+                '405': {
+                  description: 'Método não permitido',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
+                    }
+                  }
+                },
+                '429': {
+                  description: 'Rate limit atingido',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          error: { type: 'string', example: 'Too many requests' },
+                          retryAfter: { type: 'integer', description: 'Segundos até liberar', example: 543 }
+                        }
+                      }
+                    }
+                  }
+                },
+                '500': {
+                  description: 'Erro interno',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/api/count': {
+            get: {
+              summary: 'Obter total de visitas',
+              description: 'Retorna o total atual de visitas sem incrementar.',
+              responses: {
+                '200': {
+                  description: 'Total de visitas',
+                  content: {
+                    'application/json': {
+                      schema: {
+                        type: 'object',
+                        properties: {
+                          count: { type: 'integer', example: 42 }
+                        }
+                      }
+                    }
+                  }
+                },
+                '500': {
+                  description: 'Erro interno',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        components: {
+          schemas: {
+            Error: {
+              type: 'object',
+              properties: {
+                error: { type: 'string', example: 'Internal server error' }
+              }
+            }
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>
