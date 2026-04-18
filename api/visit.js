@@ -6,22 +6,25 @@ const redis = new Redis({
 });
 
 const RATE_LIMIT_WINDOW = 60 * 10;
-const VISIT_SECRET = process.env.VISIT_SECRET;
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://ton-chyod-s.github.io')
+  .split(',')
+  .map((s) => s.trim());
 
 module.exports = async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
+  const origin = req.headers['origin'];
+
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  }
   res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
 
   if (req.method === 'OPTIONS') return res.status(200).end();
   if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' });
 
-  // Autenticação por token
-  if (VISIT_SECRET) {
-    const authHeader = req.headers['authorization'];
-    if (authHeader !== `Bearer ${VISIT_SECRET}`) {
-      return res.status(401).json({ error: 'Unauthorized' });
-    }
+  if (!origin || !ALLOWED_ORIGINS.includes(origin)) {
+    return res.status(403).json({ error: 'Forbidden' });
   }
 
   const ip =
