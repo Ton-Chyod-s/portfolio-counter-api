@@ -1,4 +1,4 @@
-const { incrementCount, checkRateLimit } = require('../models/visitModel');
+const { incrementCount, checkRateLimit, incrementCountry, incrementLanguage } = require('../models/visitModel');
 
 const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://ton-chyod-s.github.io')
   .split(',')
@@ -26,6 +26,11 @@ module.exports = async function handler(req, res) {
     req.socket?.remoteAddress ||
     'unknown';
 
+  const country = req.headers['x-vercel-ip-country'] || null;
+
+  const acceptLanguage = req.headers['accept-language'] || '';
+  const language = acceptLanguage.split(',')[0]?.split('-')[0]?.toLowerCase() || null;
+
   try {
     const { limited, retryAfter } = await checkRateLimit(ip);
 
@@ -33,7 +38,12 @@ module.exports = async function handler(req, res) {
       return res.status(429).json({ error: 'Too many requests', retryAfter });
     }
 
-    const count = await incrementCount();
+    const [count] = await Promise.all([
+      incrementCount(),
+      incrementCountry(country),
+      incrementLanguage(language),
+    ]);
+
     return res.status(200).json({ count });
   } catch (err) {
     return res.status(500).json({ error: 'Internal server error' });

@@ -22,4 +22,34 @@ async function checkRateLimit(ip) {
   return { limited: false };
 }
 
-module.exports = { getCount, incrementCount, checkRateLimit };
+async function incrementCountry(country) {
+  if (!country || country === 'XX') return;
+  await redis.hincrby('portfolio:countries', country, 1);
+}
+
+async function incrementLanguage(language) {
+  if (!language) return;
+  await redis.hincrby('portfolio:languages', language, 1);
+}
+
+async function getStats() {
+  const [count, countries, languages] = await Promise.all([
+    redis.get('portfolio:visits'),
+    redis.hgetall('portfolio:countries'),
+    redis.hgetall('portfolio:languages'),
+  ]);
+
+  const sortTop = (obj, limit = 5) =>
+    Object.entries(obj || {})
+      .sort(([, a], [, b]) => Number(b) - Number(a))
+      .slice(0, limit)
+      .map(([key, val]) => ({ name: key, count: Number(val) }));
+
+  return {
+    total: Number(count) || 0,
+    countries: sortTop(countries),
+    languages: sortTop(languages),
+  };
+}
+
+module.exports = { getCount, incrementCount, checkRateLimit, incrementCountry, incrementLanguage, getStats };
