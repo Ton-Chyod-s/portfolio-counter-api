@@ -91,7 +91,7 @@
           '/api/count': {
             get: {
               summary: 'Obter total de visitas',
-              description: 'Retorna o total atual de visitas sem incrementar.',
+              description: 'Retorna o total atual de visitas sem incrementar. Requer que a requisição venha de um domínio autorizado.',
               responses: {
                 '200': {
                   description: 'Total de visitas',
@@ -103,6 +103,62 @@
                           count: { type: 'integer', example: 42 }
                         }
                       }
+                    }
+                  }
+                },
+                '403': {
+                  description: 'Origem não autorizada',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
+                    }
+                  }
+                },
+                '405': {
+                  description: 'Método não permitido',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
+                    }
+                  }
+                },
+                '500': {
+                  description: 'Erro interno',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          '/api/stats': {
+            get: {
+              summary: 'Obter estatísticas de visitas',
+              description: 'Retorna o total de visitas com breakdown por país e idioma (top 5 de cada). Cache de 60s. Requer que a requisição venha de um domínio autorizado.',
+              responses: {
+                '200': {
+                  description: 'Estatísticas de visitas',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Stats' }
+                    }
+                  }
+                },
+                '403': {
+                  description: 'Origem não autorizada',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
+                    }
+                  }
+                },
+                '405': {
+                  description: 'Método não permitido',
+                  content: {
+                    'application/json': {
+                      schema: { $ref: '#/components/schemas/Error' }
                     }
                   }
                 },
@@ -124,6 +180,27 @@
               type: 'object',
               properties: {
                 error: { type: 'string', example: 'Internal server error' }
+              }
+            },
+            StatItem: {
+              type: 'object',
+              properties: {
+                name: { type: 'string', example: 'BR' },
+                count: { type: 'integer', example: 18 }
+              }
+            },
+            Stats: {
+              type: 'object',
+              properties: {
+                total: { type: 'integer', example: 42 },
+                countries: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/StatItem' }
+                },
+                languages: {
+                  type: 'array',
+                  items: { $ref: '#/components/schemas/StatItem' }
+                }
               }
             }
           }
