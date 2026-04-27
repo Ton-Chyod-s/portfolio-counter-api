@@ -1,13 +1,17 @@
 const redis = require('../config/redis');
+const sql = require('../config/neon');
 
 const RATE_LIMIT_WINDOW = 60 * 10; // 10 minutos
 
-async function getCount() {
-  return (await redis.get('portfolio:visits')) || 0;
+async function logVisit(country, language) {
+  await sql`INSERT INTO visits (country, language) VALUES (${country || null}, ${language || null})`;
+  const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM visits`;
+  return count;
 }
 
-async function incrementCount() {
-  return await redis.incr('portfolio:visits');
+async function getCount() {
+  const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM visits`;
+  return count;
 }
 
 async function checkRateLimit(ip) {
@@ -22,34 +26,18 @@ async function checkRateLimit(ip) {
   return { limited: false };
 }
 
-async function incrementCountry(country) {
-  if (!country || country === 'XX') return;
-  await redis.hincrby('portfolio:countries', country, 1);
-}
-
-async function incrementLanguage(language) {
-  if (!language) return;
-  await redis.hincrby('portfolio:languages', language, 1);
-}
-
 async function getStats() {
-  const [count, countries, languages] = await Promise.all([
-    redis.get('portfolio:visits'),
-    redis.hgetall('portfolio:countries'),
-    redis.hgetall('portfolio:languages'),
+  const [countResult, countries, languages] = await Promise.all([
+    sql`SELECT COUNT(*)::int AS count FROM visits`,
+    sql`SELECT country AS name, COUNT(*)::int AS count FROM visits WHERE country IS NOT NULL GROUP BY country ORDER BY count DESC LIMIT 5`,
+    sql`SELECT language AS name, COUNT(*)::int AS count FROM visits WHERE language IS NOT NULL GROUP BY language ORDER BY count DESC LIMIT 5`,
   ]);
 
-  const sortTop = (obj, limit = 5) =>
-    Object.entries(obj || {})
-      .sort(([, a], [, b]) => Number(b) - Number(a))
-      .slice(0, limit)
-      .map(([key, val]) => ({ name: key, count: Number(val) }));
-
   return {
-    total: Number(count) || 0,
-    countries: sortTop(countries),
-    languages: sortTop(languages),
+    total: countResult[0].count,
+    countries,
+    languages,
   };
 }
 
-module.exports = { getCount, incrementCount, checkRateLimit, incrementCountry, incrementLanguage, getStats };
+module.exports = { logVisit, getCount, checkRateLimit, getStats };

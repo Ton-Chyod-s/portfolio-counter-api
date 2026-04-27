@@ -1,4 +1,5 @@
 const { getCount } = require('../models/visitModel');
+const Sentry = require('../config/sentry');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -12,6 +13,7 @@ module.exports = async function handler(req, res) {
     const count = await getCount();
     return res.status(200).json({ count });
   } catch (err) {
+    Sentry.captureException(err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

@@ -1,4 +1,5 @@
 const { getStats } = require('../models/visitModel');
+const Sentry = require('../config/sentry');
 
 module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -13,6 +14,7 @@ module.exports = async function handler(req, res) {
     const stats = await getStats();
     return res.status(200).json(stats);
   } catch (err) {
+    Sentry.captureException(err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };

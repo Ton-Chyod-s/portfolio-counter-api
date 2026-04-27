@@ -1,8 +1,6 @@
-const { incrementCount, checkRateLimit, incrementCountry, incrementLanguage } = require('../models/visitModel');
-
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://ton-chyod-s.github.io')
-  .split(',')
-  .map((s) => s.trim());
+const { logVisit, checkRateLimit } = require('../models/visitModel');
+const { ALLOWED_ORIGINS } = require('../config/cors');
+const Sentry = require('../config/sentry');
 
 module.exports = async function handler(req, res) {
   const origin = req.headers['origin'];
@@ -38,14 +36,10 @@ module.exports = async function handler(req, res) {
       return res.status(429).json({ error: 'Too many requests', retryAfter });
     }
 
-    const [count] = await Promise.all([
-      incrementCount(),
-      incrementCountry(country),
-      incrementLanguage(language),
-    ]);
-
+    const count = await logVisit(country, language);
     return res.status(200).json({ count });
   } catch (err) {
+    Sentry.captureException(err);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
