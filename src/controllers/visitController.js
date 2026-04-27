@@ -40,6 +40,7 @@ module.exports = async function handler(req, res) {
     return res.status(200).json({ count });
   } catch (err) {
     Sentry.captureException(err);
+    await Sentry.flush(2000);
     return res.status(500).json({ error: 'Internal server error' });
   }
 };
