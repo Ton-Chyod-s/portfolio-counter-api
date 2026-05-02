@@ -40,4 +40,26 @@ async function getStats() {
   };
 }
 
-module.exports = { logVisit, getCount, checkRateLimit, getStats };
+async function logLinkVisit(country, language) {
+  await sql`
+    INSERT INTO link_visits (country, language)
+    VALUES (${country || null}, ${language || null})
+    ON CONFLICT DO NOTHING
+  `;
+  const [{ count }] = await sql`SELECT COUNT(*)::int AS count FROM link_visits`;
+  return count;
+}
+
+async function checkLinkRateLimit(ip) {
+  const key = `ratelimit:links:${ip}`;
+  const isNew = await redis.set(key, 1, { ex: RATE_LIMIT_WINDOW, nx: true });
+
+  if (isNew === null) {
+    const retryAfter = await redis.ttl(key);
+    return { limited: true, retryAfter };
+  }
+
+  return { limited: false };
+}
+
+module.exports = { logVisit, getCount, checkRateLimit, getStats, logLinkVisit, checkLinkRateLimit };
