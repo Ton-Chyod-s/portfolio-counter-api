@@ -62,4 +62,18 @@ async function checkLinkRateLimit(ip) {
   return { limited: false };
 }
 
-module.exports = { logVisit, getCount, checkRateLimit, getStats, logLinkVisit, checkLinkRateLimit };
+async function getLinkStats() {
+  const [countResult, countries, languages] = await Promise.all([
+    sql`SELECT COUNT(*)::int AS count FROM link_visits`,
+    sql`SELECT country AS name, COUNT(*)::int AS count FROM link_visits WHERE country IS NOT NULL GROUP BY country ORDER BY count DESC LIMIT 5`,
+    sql`SELECT language AS name, COUNT(*)::int AS count FROM link_visits WHERE language IS NOT NULL GROUP BY language ORDER BY count DESC LIMIT 5`,
+  ]);
+
+  return {
+    total: countResult[0].count,
+    countries,
+    languages,
+  };
+}
+
+module.exports = { logVisit, getCount, checkRateLimit, getStats, logLinkVisit, checkLinkRateLimit, getLinkStats };
